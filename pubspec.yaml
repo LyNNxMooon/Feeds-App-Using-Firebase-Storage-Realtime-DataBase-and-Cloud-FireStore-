@@ -35,6 +35,7 @@ dependencies:
   gap: ^3.0.1
   json_annotation: ^4.8.1
   provider: ^6.0.5
+  cached_network_image: ^3.3.1
   flutter:
     sdk: flutter
 
