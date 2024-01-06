@@ -1,16 +1,7 @@
 # feeds
 
-A new Flutter project.
+A feed project application where users can pick files from their device gallery, upload with captions and view on their feed pages
+-applied file picker to pick photos, videos, pfs from gallery 
+-Upload to fire base storage
+-Save to Realtime Firebase Database and fetch with Stream data (Feeds) and display in homepage feed widget
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
