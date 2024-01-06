@@ -11,7 +11,7 @@ class HomePageBloc extends BaseBloc {
 
   final FeedModel _feedModel = FeedModel();
 
-  Future deleteFeed(int id) => _feedModel.deleteFeed(id);
+  void deleteFeed(int id) => _feedModel.deleteFeed(id);
 
   HomePageBloc() {
     setLoadingState = LoadingState.loading;

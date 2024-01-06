@@ -1,4 +1,3 @@
-import 'package:feeds/utils/enums.dart';
 import 'package:json_annotation/json_annotation.dart';
 part 'feed_vo.g.dart';
 
@@ -21,17 +20,6 @@ class FeedVO {
       required this.fileURL,
       required this.fileType,
       required this.createdAt});
-
-  FileType get getFileType {
-    if (fileType.toLowerCase() == FileType.image.name) {
-      return FileType.image;
-    }
-    if (fileType.toLowerCase() == FileType.video.name) {
-      return FileType.video;
-    }
-
-    return FileType.file;
-  }
 
   factory FeedVO.fromJson(Map<String, dynamic> json) => _$FeedVOFromJson(json);
 

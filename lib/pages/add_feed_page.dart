@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:feeds/bloc/add_feed_page_bloc.dart';
 import 'package:feeds/constants/colors.dart';
 import 'package:feeds/constants/dimensions.dart';
-import 'package:feeds/constants/strings.dart';
-
 import 'package:feeds/utils/enums.dart';
+import 'package:feeds/utils/extension.dart';
 import 'package:feeds/utils/file_picker_utils.dart';
+import 'package:feeds/widgets/dialog_widget.dart';
+import 'package:feeds/widgets/loading_widget.dart';
+import 'package:feeds/widgets/video_player_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:provider/provider.dart';
@@ -27,10 +29,38 @@ class _AddFeedPageState extends State<AddFeedPage> {
       child: SafeArea(
           child: Scaffold(
         floatingActionButton: Builder(
-          builder: (context) => FloatingActionButton(
+          builder: (buttonContext) => FloatingActionButton(
             onPressed: () {
-              final bloc = context.read<AddFeedPageBloc>();
-              bloc.saveFeed(_captionController.text);
+              final bloc = buttonContext.read<AddFeedPageBloc>();
+              showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => const LoadingWidget());
+              bloc.saveFeed(_captionController.text).then((value) {
+                context.navigateBack();
+                showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => DialogWidget(
+                          content: 'Success',
+                          onTapOK: () {
+                            context.navigateBack();
+                            context.navigateBack();
+                          },
+                        ));
+              }).catchError((error) {
+                context.navigateBack();
+                showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => DialogWidget(
+                          content: error.toString(),
+                          isSuccessDialog: false,
+                          onTapOK: () {
+                            context.navigateBack();
+                          },
+                        ));
+              });
               _captionController.clear();
             },
             child: const Icon(Icons.upload),
@@ -63,7 +93,11 @@ class _AddFeedPageState extends State<AddFeedPage> {
                         decoration: const InputDecoration(hintText: "Caption"),
                       )),
                   const Gap(kSP20x),
-                  const PhotoView()
+                  Selector<AddFeedPageBloc, FileType>(
+                    builder: (_, fileType, __) =>
+                        FileTypeView(fileType: fileType),
+                    selector: (_, bloc) => bloc.getFileType,
+                  ),
                 ],
               )),
         ),
@@ -72,41 +106,122 @@ class _AddFeedPageState extends State<AddFeedPage> {
   }
 }
 
-class PhotoView extends StatelessWidget {
-  const PhotoView({
-    super.key,
-  });
+class FileTypeView extends StatelessWidget {
+  const FileTypeView({super.key, required this.fileType});
+
+  final FileType fileType;
 
   @override
   Widget build(BuildContext context) {
     return Selector<AddFeedPageBloc, File?>(
-      builder: (_, file, __) => file != null
-          ? Stack(
-              children: [
-                SizedBox(
-                    width: kUploadImageWidth,
-                    height: kUploadImageHeight,
-                    child: Image.file(
-                      file,
-                      fit: BoxFit.cover,
-                    )),
-                Align(
-                  alignment: Alignment.topRight,
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: const Icon(
+      builder: (_, file, __) => Container(
+        width: kUploadImageWidth,
+        height: kUploadImageHeight,
+        child: file != null && fileType == FileType.image
+            ? PhotoView(filePath: file.path)
+            : file != null && fileType == FileType.video
+                ? VideoPlayerWidget(
+                    filePath: file.path,
+                    onTapRemove: () {
+                      final bloc = context.read<AddFeedPageBloc>();
+                      bloc.setSelectFile = null;
+                    },
+                    icon: Icon(
                       Icons.delete,
                       color: kDeleteColor,
-                      size: 28,
+                      size: kSP28x,
                     ),
-                  ),
-                )
-              ],
-            )
-          : const Center(
-              child: Text(kUploadFileNullText),
-            ),
+                  )
+                : file != null && fileType == FileType.file
+                    ? FileView(
+                        filePath: file.path.split('/').last,
+                      )
+                    : const SizedBox(),
+      ),
       selector: (_, bloc) => bloc.getSelectFile,
+    );
+  }
+}
+
+class PhotoView extends StatelessWidget {
+  const PhotoView({
+    super.key,
+    required this.filePath,
+  });
+
+  final String filePath;
+
+  @override
+  Widget build(BuildContext context) {
+    final bloc = context.read<AddFeedPageBloc>();
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Image.file(
+            File(filePath),
+            fit: BoxFit.cover,
+          ),
+        ),
+        Align(
+          alignment: Alignment.topRight,
+          child: GestureDetector(
+            onTap: () {
+              bloc.setSelectFile = null;
+            },
+            child: const Icon(
+              Icons.delete,
+              color: kDeleteColor,
+              size: kSP28x,
+            ),
+          ),
+        )
+      ],
+    );
+  }
+}
+
+class FileView extends StatelessWidget {
+  const FileView({super.key, required this.filePath});
+
+  final String filePath;
+
+  @override
+  Widget build(BuildContext context) {
+    final bloc = context.read<AddFeedPageBloc>();
+    return Stack(
+      children: [
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircleAvatar(
+                radius: kSP30x,
+                child: Icon(
+                  Icons.file_present,
+                  size: kSP32x,
+                ),
+              ),
+              const SizedBox(
+                height: kSP20x,
+              ),
+              Text(filePath)
+            ],
+          ),
+        ),
+        Align(
+          alignment: Alignment.topRight,
+          child: GestureDetector(
+            onTap: () {
+              bloc.setSelectFile = null;
+            },
+            child: const Icon(
+              Icons.delete,
+              color: kDeleteColor,
+              size: kSP28x,
+            ),
+          ),
+        )
+      ],
     );
   }
 }
@@ -134,7 +249,11 @@ class UploadButtonItemView extends StatelessWidget {
     final bloc = context.read<AddFeedPageBloc>();
     return GestureDetector(
       onTap: () async {
-        final image = await FilePickerUtils.getImage();
+        final image = fileType == FileType.image
+            ? await FilePickerUtils.getImage()
+            : fileType == FileType.video
+                ? await FilePickerUtils.getVideo()
+                : await FilePickerUtils.getFile();
         bloc.setFileType = fileType;
         bloc.setSelectFile = image;
       },

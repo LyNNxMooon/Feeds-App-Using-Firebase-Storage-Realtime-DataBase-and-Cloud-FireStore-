@@ -15,7 +15,7 @@ class FeedModel {
 
   void saveFeed(FeedVO feedVO) => _feedDataAgent.saveFeed(feedVO);
 
-  Future deleteFeed(int id) => _feedDataAgent.deleteFeed(id);
+  void deleteFeed(int id) => _feedDataAgent.deleteFeed(id);
 
   Stream<List<FeedVO>?> getFeedListStream() =>
       _feedDataAgent.getFeedListStream();

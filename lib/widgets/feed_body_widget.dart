@@ -1,6 +1,9 @@
 import 'package:feeds/constants/dimensions.dart';
 import 'package:feeds/data/vos/feed_vo.dart';
+import 'package:feeds/utils/enums.dart';
+import 'package:feeds/utils/url_launcher_utils.dart';
 import 'package:feeds/widgets/loading_widget.dart';
+import 'package:feeds/widgets/video_player_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -9,7 +12,7 @@ class FeedBodyWidget extends StatelessWidget {
   const FeedBodyWidget(
       {super.key, required this.onPressDelete, required this.feed});
 
-  final Function onPressDelete;
+  final VoidCallback onPressDelete;
   final FeedVO? feed;
 
   @override
@@ -18,8 +21,9 @@ class FeedBodyWidget extends StatelessWidget {
         onLongPress: () {
           showModalBottomSheet(
             context: context,
-            builder: (_) =>
-                BottomSheetDeleteItemView(onPressDelete: onPressDelete()),
+            builder: (bottomSheetContext) => BottomSheetDeleteItemView(
+                onPressDelete: onPressDelete,
+                bottomSheetContext: bottomSheetContext),
           );
         },
         child: Card(
@@ -41,17 +45,30 @@ class FeedBodyWidget extends StatelessWidget {
                   feed?.feedTitle ?? '',
                 ),
                 Gap(kSP20x),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: CachedNetworkImage(
-                      imageUrl: feed?.fileURL ?? '',
-                      placeholder: (_, __) => const LoadingWidget(),
-                      width: MediaQuery.of(context).size.width,
-                      fit: BoxFit.cover,
+                if (feed?.fileType == FileType.image.name) ...[
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: CachedNetworkImage(
+                        imageUrl: feed?.fileURL ?? '',
+                        placeholder: (_, __) => const LoadingWidget(),
+                        width: MediaQuery.of(context).size.width,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  ),
-                )
+                  )
+                ],
+                if (feed?.fileType == FileType.video.name) ...[
+                  Expanded(
+                    child: VideoPlayerWidget(
+                      filePath: feed?.fileURL ?? '',
+                      isFileNetwork: true,
+                    ),
+                  )
+                ],
+                if (feed?.fileType == FileType.file.name) ...[
+                  Expanded(child: FeedFileView(fileURL: feed?.fileURL ?? ''))
+                ]
               ],
             ),
           ),
@@ -60,19 +77,51 @@ class FeedBodyWidget extends StatelessWidget {
 }
 
 class BottomSheetDeleteItemView extends StatelessWidget {
-  const BottomSheetDeleteItemView({super.key, required this.onPressDelete});
+  const BottomSheetDeleteItemView(
+      {super.key,
+      required this.onPressDelete,
+      required this.bottomSheetContext});
 
-  final Function onPressDelete;
+  final VoidCallback onPressDelete;
+  final BuildContext bottomSheetContext;
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(top: kSP10x),
+      padding: const EdgeInsets.only(top: kSP30x, left: kSP20x),
       height: MediaQuery.of(context).size.height * 0.1,
       child: GestureDetector(
         onTap: () {
           onPressDelete();
+          Navigator.pop(bottomSheetContext);
         },
-        child: const Text("Delete Feed"),
+        child: const Text(
+          "Delete Feed",
+          style: TextStyle(fontSize: kFontSize16x),
+        ),
+      ),
+    );
+  }
+}
+
+class FeedFileView extends StatelessWidget {
+  const FeedFileView({required this.fileURL});
+
+  final String fileURL;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: CircleAvatar(
+        radius: 30,
+        child: GestureDetector(
+          onTap: () async {
+            UrlLauncherUtils.launchURLToBrowser(fileURL);
+          },
+          child: const Icon(
+            Icons.file_present,
+            size: 32,
+          ),
+        ),
       ),
     );
   }
