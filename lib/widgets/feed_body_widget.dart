@@ -8,12 +8,30 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class FeedBodyWidget extends StatelessWidget {
-  const FeedBodyWidget(
-      {super.key, required this.onPressDelete, required this.feed});
+class FeedBodyWidget extends StatefulWidget {
+  FeedBodyWidget(
+      {super.key,
+      required this.onPressDelete,
+      required this.feed,
+      required this.isEdit,
+      this.editController});
 
   final VoidCallback onPressDelete;
+
   final FeedVO? feed;
+  final bool isEdit;
+  final TextEditingController? editController;
+
+  @override
+  State<FeedBodyWidget> createState() => _FeedBodyWidgetState();
+}
+
+class _FeedBodyWidgetState extends State<FeedBodyWidget> {
+  @override
+  void initState() {
+    widget.editController?.text = widget.feed?.feedTitle ?? '';
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +40,7 @@ class FeedBodyWidget extends StatelessWidget {
           showModalBottomSheet(
             context: context,
             builder: (bottomSheetContext) => BottomSheetDeleteItemView(
-                onPressDelete: onPressDelete,
+                onPressDelete: widget.onPressDelete,
                 bottomSheetContext: bottomSheetContext),
           );
         },
@@ -41,16 +59,26 @@ class FeedBodyWidget extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  feed?.feedTitle ?? '',
-                ),
+                widget.isEdit
+                    ? TextField(
+                        controller: widget.editController,
+                        decoration: InputDecoration(
+                            hintText: "Caption",
+                            enabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide.none),
+                            focusedBorder: UnderlineInputBorder(
+                                borderSide: BorderSide.none)),
+                      )
+                    : Text(
+                        widget.feed?.feedTitle ?? '',
+                      ),
                 Gap(kSP20x),
-                if (feed?.fileType == FileType.image.name) ...[
+                if (widget.feed?.fileType == FileType.image.name) ...[
                   Expanded(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: CachedNetworkImage(
-                        imageUrl: feed?.fileURL ?? '',
+                        imageUrl: widget.feed?.fileURL ?? '',
                         placeholder: (_, __) => const LoadingWidget(),
                         width: MediaQuery.of(context).size.width,
                         fit: BoxFit.cover,
@@ -58,16 +86,17 @@ class FeedBodyWidget extends StatelessWidget {
                     ),
                   )
                 ],
-                if (feed?.fileType == FileType.video.name) ...[
+                if (widget.feed?.fileType == FileType.video.name) ...[
                   Expanded(
                     child: VideoPlayerWidget(
-                      filePath: feed?.fileURL ?? '',
+                      filePath: widget.feed?.fileURL ?? '',
                       isFileNetwork: true,
                     ),
                   )
                 ],
-                if (feed?.fileType == FileType.file.name) ...[
-                  Expanded(child: FeedFileView(fileURL: feed?.fileURL ?? ''))
+                if (widget.feed?.fileType == FileType.file.name) ...[
+                  Expanded(
+                      child: FeedFileView(fileURL: widget.feed?.fileURL ?? ''))
                 ]
               ],
             ),
@@ -114,7 +143,7 @@ class FeedFileView extends StatelessWidget {
       child: CircleAvatar(
         radius: 30,
         child: GestureDetector(
-          onTap: () async {
+          onTap: () {
             UrlLauncherUtils.launchURLToBrowser(fileURL);
           },
           child: const Icon(
