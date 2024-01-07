@@ -1,5 +1,6 @@
 import 'package:feeds/data/vos/feed_vo.dart';
 import 'package:feeds/network/data_agent/feed_data_agent.dart';
+//import 'package:feeds/network/data_agent/feed_data_agent_cloud_fire_store_impl.dart';
 import 'package:feeds/network/data_agent/feed_data_agent_real_time_data_base_impl.dart';
 
 class FeedModel {
@@ -10,6 +11,8 @@ class FeedModel {
   factory FeedModel() => _singleton;
 
   final FeedDataAgent _feedDataAgent = FeedDataAgentRealTimeDatabaseImpl();
+
+  //final FeedDataAgent _feedDataAgent = FeedDataAgentCloudFireStoreImpl();
 
   Future<FeedVO> getFeedByID(int id) => _feedDataAgent.getFeedByID(id);
 
