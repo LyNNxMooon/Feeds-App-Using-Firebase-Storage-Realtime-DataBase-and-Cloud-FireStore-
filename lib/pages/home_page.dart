@@ -2,7 +2,9 @@ import 'package:feeds/bloc/home_page_bloc.dart';
 import 'package:feeds/constants/colors.dart';
 import 'package:feeds/data/vos/feed_vo.dart';
 import 'package:feeds/pages/add_feed_page.dart';
+import 'package:feeds/pages/feed_details_page.dart';
 import 'package:feeds/utils/enums.dart';
+import 'package:feeds/widgets/error_widget.dart';
 import 'package:feeds/widgets/feed_body_widget.dart';
 import 'package:feeds/widgets/loading_state_widget.dart';
 import 'package:flutter/material.dart';
@@ -52,10 +54,19 @@ class HomePageItemView extends StatelessWidget {
     return Selector<HomePageBloc, List<FeedVO>?>(
         selector: (_, bloc) => bloc.getFeedList,
         builder: (_, feedList, __) => ListView.separated(
-            itemBuilder: (_, index) => FeedBodyWidget(
-                  feed: feedList?[index],
-                  onPressDelete: () =>
-                      bloc.deleteFeed(feedList?[index].id ?? -1),
+            itemBuilder: (_, index) => GestureDetector(
+                  onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            FeedDetailsPage(feedID: feedList![index].id),
+                      )),
+                  child: FeedBodyWidget(
+                    isEdit: false,
+                    feed: feedList?[index],
+                    onPressDelete: () =>
+                        bloc.deleteFeed(feedList?[index].id ?? -1),
+                  ),
                 ),
             separatorBuilder: (_, index) => const Divider(),
             itemCount: feedList?.length ?? 0));
@@ -69,15 +80,7 @@ class HomePageErrorStateItemView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Selector<HomePageBloc, String?>(
         selector: (_, bloc) => bloc.getErrorMessage,
-        builder: (_, errorMessage, __) => Center(
-              child: Text(
-                errorMessage ?? '',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                ),
-              ),
-            ));
+        builder: (_, errorMessage, __) =>
+            ShowErrorWidget(errorMessage: errorMessage ?? ''));
   }
 }
